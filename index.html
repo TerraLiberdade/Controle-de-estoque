@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciar Produtos</title>
+    <style>
+        /* Estilos básicos para tornar a página mais bonita */
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        table, th, td { border: 1px solid #ddd; }
+        th, td { padding: 8px 12px; text-align: left; }
+        button { padding: 8px 12px; cursor: pointer; }
+        .edit { background-color: #4CAF50; color: white; border: none; }
+        .delete { background-color: #f44336; color: white; border: none; }
+    </style>
+</head>
+<body>
+    <h2>Produtos</h2>
+    <table id="tabela-produtos">
+        <thead>
+            <tr>
+                <th>Produto</th>
+                <th>Quantidade</th>
+                <th>Data de Adição</th>
+                <th>Chave do Produto</th>
+                <th>Data de Atualização</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Produtos serão carregados aqui -->
+        </tbody>
+    </table>
+
+    <h3>Adicionar Produto</h3>
+    <form id="form-produto">
+        <input type="text" id="produto" placeholder="Nome do produto" required>
+        <input type="number" id="quantidade" placeholder="Quantidade" required>
+        <input type="text" id="chave_produto" placeholder="Chave do produto" required>
+        <button type="submit">Adicionar</button>
+    </form>
+
+    <script>
+        // URL do seu Google Apps Script
+        const API_URL = 'https://script.google.com/macros/s/AKfycbxtKTP2VeJtIN5RgMvTaXCFbnhsFI36i1fMtmnzt7mfEL38iDy0dPn3a1m6syktJJQGcQ/exec';
+
+        // Função para adicionar produto
+        async function adicionarProduto(event) {
+            event.preventDefault();
+
+            const produto = document.getElementById('produto').value;
+            const quantidade = document.getElementById('quantidade').value;
+            const chave_produto = document.getElementById('chave_produto').value;
+
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    produto,
+                    quantidade,
+                    chave_produto
+                })
+            });
+
+            const result = await response.json();
+            alert(result.message);
+            carregarProdutos();
+        }
+
+        // Função para carregar os produtos
+        async function carregarProdutos() {
+            const response = await fetch(API_URL);
+            const data = await response.json();
+
+            const tabela = document.getElementById('tabela-produtos').getElementsByTagName('tbody')[0];
+            tabela.innerHTML = ""; // Limpa a tabela antes de preencher
+
+            data.forEach((produto) => {
+                const row = tabela.insertRow();
+                row.insertCell(0).textContent = produto.produto;
+                row.insertCell(1).textContent = produto.quantidade;
+                row.insertCell(2).textContent = produto.data_adicao;
+                row.insertCell(3).textContent = produto.chave_produto;
+                row.insertCell(4).textContent = produto.data_atualizacao;
+
+                const cell = row.insertCell(5);
+                const btnEditar = document.createElement('button');
+                btnEditar.textContent = 'Editar';
+                btnEditar.classList.add('edit');
+                btnEditar.onclick = () => editarProduto(produto.chave_produto);
+                const btnExcluir = document.createElement('button');
+                btnExcluir.textContent = 'Excluir';
+                btnExcluir.classList.add('delete');
+                btnExcluir.onclick = () => excluirProduto(produto.chave_produto);
+                cell.appendChild(btnEditar);
+                cell.appendChild(btnExcluir);
+            });
+        }
+
+        // Função para editar produto
+        async function editarProduto(chave_produto) {
+            const produto = prompt('Novo nome do produto:');
+            const quantidade = prompt('Nova quantidade:');
+            
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chave_produto, produto, quantidade })
+            });
+
+            const result = await response.json();
+            alert(result.message);
+            carregarProdutos();
+        }
+
+        // Função para excluir produto
+        async function excluirProduto(chave_produto) {
+            const confirmacao = confirm('Tem certeza que deseja excluir este produto?');
+            if (confirmacao) {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chave_produto })
+                });
+
+                const result = await response.json();
+                alert(result.message);
+                carregarProdutos();
+            }
+        }
+
+        // Adicionar produto ao enviar o formulário
+        document.getElementById('form-produto').addEventListener('submit', adicionarProduto);
+
+        // Carregar produtos na inicialização
+        carregarProdutos();
+    </script>
+</body>
+</html>
